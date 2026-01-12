@@ -5,7 +5,7 @@ require "../conexion.php";
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-/* ========= FUNCIONES SWEET ALERT ========= */
+/* ========= SWEET ALERT ========= */
 function alertError($msg) {
     echo "
     <!DOCTYPE html>
@@ -21,9 +21,7 @@ function alertError($msg) {
                 title: 'Error',
                 text: ".json_encode($msg).",
                 confirmButtonText: 'Volver'
-            }).then(() => {
-                history.back();
-            });
+            }).then(() => history.back());
         </script>
     </body>
     </html>";
@@ -43,10 +41,7 @@ function alertSuccess($venta_id, $estado) {
             Swal.fire({
                 icon: 'success',
                 title: 'Venta registrada',
-                html: `
-                    <b>Venta #{$venta_id}</b><br>
-                    Estado: <b>{$estado}</b>
-                `,
+                html: `<b>Venta #{$venta_id}</b><br>Estado: <b>{$estado}</b>`,
                 confirmButtonText: 'Continuar'
             }).then(() => {
                 window.location.href = '/punto/pantallas/ventas.php';
@@ -72,13 +67,13 @@ if (!isset($_POST['metodo_pago'], $_POST['monto_pago'])) {
 
 /* ========= DATOS ========= */
 $usuario_id = (int)$_SESSION['user_id'];
-$caja_id    = 2; // ⚠️ luego dinámico
+$caja_id    = 2; // TODO: dinámico
 $total      = (float)$_SESSION['total'];
 $monto_pago = (float)$_POST['monto_pago'];
+$metodo     = $_POST['metodo_pago'];
 $carrito    = $_SESSION['carrito'];
 
 $cliente_id = !empty($_POST['cliente_id']) ? (int)$_POST['cliente_id'] : null;
-$metodo     = $_POST['metodo_pago'];
 
 if ($monto_pago < 0 || $monto_pago > $total) {
     alertError("Monto de pago inválido");
@@ -115,7 +110,7 @@ try {
     $venta_id = $conexion->insert_id;
     $stmt->close();
 
-    /* ========= DETALLE + INVENTARIO ========= */
+    /* ========= DETALLE + STOCK ========= */
     $stmtDet = $conexion->prepare("
         INSERT INTO venta_detalle
         (venta_id, producto_id, cantidad, precio, subtotal)
@@ -135,82 +130,77 @@ try {
         $precio      = (float)$item['precio'];
         $subtotal    = $cantidad * $precio;
 
-        $stmtDet->bind_param(
-            "iiddd",
-            $venta_id,
-            $producto_id,
-            $cantidad,
-            $precio,
-            $subtotal
-        );
-
+        $stmtDet->bind_param("iiddd", $venta_id, $producto_id, $cantidad, $precio, $subtotal);
         if (!$stmtDet->execute()) {
             throw new Exception("Error al guardar detalle");
         }
 
-        $stmtStock->bind_param(
-            "did",
-            $cantidad,
-            $producto_id,
-            $cantidad
-        );
-
+        $stmtStock->bind_param("did", $cantidad, $producto_id, $cantidad);
         if (!$stmtStock->execute() || $stmtStock->affected_rows === 0) {
-            throw new Exception("Stock insuficiente para producto ID $producto_id");
+            throw new Exception("Stock insuficiente (producto ID $producto_id)");
         }
     }
 
     $stmtDet->close();
     $stmtStock->close();
 
-    /* ========= REGISTRAR PAGO (SI HAY) ========= */
+    /* ========= PAGOS ========= */
     if ($monto_pago > 0) {
 
-        $stmtPago = $conexion->prepare("
+        /* ventas_pagos */
+        $stmtVP = $conexion->prepare("
             INSERT INTO ventas_pagos
             (venta_id, caja_id, usuario_id, monto, metodo_pago)
             VALUES (?,?,?,?,?)
         ");
+        $stmtVP->bind_param("iiids", $venta_id, $caja_id, $usuario_id, $monto_pago, $metodo);
+        if (!$stmtVP->execute()) {
+            throw new Exception("Error en ventas_pagos");
+        }
+        $stmtVP->close();
+
+        /* pagos (tabla general) */
+        $stmtPago = $conexion->prepare("
+            INSERT INTO pagos
+            (tipo, referencia_id, caja_id, usuario_id, monto, metodo_pago, referencia)
+            VALUES ('VENTA', ?, ?, ?, ?, ?, ?)
+        ");
+        $referencia = "Venta #{$venta_id}";
         $stmtPago->bind_param(
-            "iiids",
+            "iiidss",
             $venta_id,
             $caja_id,
             $usuario_id,
             $monto_pago,
-            $metodo
+            $metodo,
+            $referencia
         );
 
         if (!$stmtPago->execute()) {
-            throw new Exception("No se pudo registrar el pago");
+            throw new Exception("Error al registrar en pagos");
         }
-
         $stmtPago->close();
 
-        /* ========= MOVIMIENTO CAJA ========= */
-        $desc = "Pago venta #{$venta_id}";
+        /* movimiento caja */
         $stmtMov = $conexion->prepare("
             INSERT INTO movimientos_caja
             (caja_id, tipo, descripcion, monto)
             VALUES (?, 'INGRESO', ?, ?)
         ");
-        $stmtMov->bind_param("isd", $caja_id, $desc, $monto_pago);
-
+        $stmtMov->bind_param("isd", $caja_id, $referencia, $monto_pago);
         if (!$stmtMov->execute()) {
-            throw new Exception("Error al registrar movimiento de caja");
+            throw new Exception("Error en movimiento de caja");
         }
-
         $stmtMov->close();
     }
 
     /* ========= CONFIRMAR ========= */
     $conexion->commit();
-
     unset($_SESSION['carrito'], $_SESSION['total']);
 
     alertSuccess($venta_id, $estado_venta);
 
 } catch (Exception $e) {
-
     $conexion->rollback();
     alertError($e->getMessage());
 }

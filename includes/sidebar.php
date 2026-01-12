@@ -187,6 +187,24 @@ function renderSidebar(string $paginaActual = '')
                         </a>
                     </li>
                 <?php endif; ?>
+<?php if (puedeVerModulo('clientes')): ?>
+                    <li class="nav-item">
+                        <a href="/punto/pantallas/clientes.php"
+                            class="nav-link hoverbutton <?= $paginaActual == 'Clientes' ? 'active' : '' ?>">
+
+                            <!-- 💸 GASTOS -->
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+             fill="currentColor" viewBox="0 0 24 24">
+            <path d="M16 11c1.66 0 3-1.79 3-4s-1.34-4-3-4-3 1.79-3 4 1.34 4 3 4z"/>
+            <path d="M8 11c1.66 0 3-1.79 3-4S9.66 3 8 3 5 4.79 5 7s1.34 4 3 4z"/>
+            <path d="M8 13c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+            <path d="M16 13c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45v2h7v-2c0-2.66-5.33-4-8-4z"/>
+        </svg>
+
+                            Clientes
+                        </a>
+                    </li>
+                <?php endif; ?>
 
             </ul>
         </div>

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: localhost
--- Tiempo de generación: 10-01-2026 a las 04:38:38
+-- Tiempo de generación: 11-01-2026 a las 17:14:07
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -154,6 +154,25 @@ CREATE TABLE `movimientos_caja` (
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `pagos`
+--
+
+CREATE TABLE `pagos` (
+  `id` int(11) NOT NULL,
+  `tipo` enum('VENTA','GASTO') NOT NULL,
+  `referencia_id` int(11) NOT NULL,
+  `caja_id` int(11) NOT NULL,
+  `usuario_id` int(11) NOT NULL,
+  `monto` decimal(10,2) NOT NULL,
+  `metodo_pago` enum('EFECTIVO','TARJETA','TRANSFERENCIA') NOT NULL,
+  `referencia` varchar(100) DEFAULT NULL,
+  `estado` enum('APLICADO','CANCELADO') DEFAULT 'APLICADO',
+  `fecha` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `productos`
 --
 
@@ -237,6 +256,7 @@ CREATE TABLE `ventas` (
   `usuario_id` int(11) NOT NULL,
   `caja_id` int(11) NOT NULL,
   `total` decimal(10,2) NOT NULL,
+  `total_pagado` decimal(10,2) NOT NULL DEFAULT 0.00,
   `metodo_pago` enum('EFECTIVO','TARJETA','TRANSFERENCIA') DEFAULT NULL,
   `fecha` timestamp NOT NULL DEFAULT current_timestamp(),
   `tipo` enum('MOSTRADOR','FACTURA') DEFAULT 'MOSTRADOR',
@@ -244,6 +264,22 @@ CREATE TABLE `ventas` (
   `requiere_factura` tinyint(4) DEFAULT 0,
   `tipo_factura` enum('publico','nombre') DEFAULT 'publico',
   `nombre_receptor` varchar(150) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `ventas_pagos`
+--
+
+CREATE TABLE `ventas_pagos` (
+  `id` int(11) NOT NULL,
+  `venta_id` int(11) NOT NULL,
+  `caja_id` int(11) NOT NULL,
+  `usuario_id` int(11) NOT NULL,
+  `monto` decimal(10,2) NOT NULL,
+  `metodo_pago` enum('EFECTIVO','TARJETA','TRANSFERENCIA') NOT NULL,
+  `fecha` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -315,6 +351,15 @@ ALTER TABLE `movimientos_caja`
   ADD KEY `caja_id` (`caja_id`);
 
 --
+-- Indices de la tabla `pagos`
+--
+ALTER TABLE `pagos`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_tipo_ref` (`tipo`,`referencia_id`),
+  ADD KEY `idx_caja` (`caja_id`),
+  ADD KEY `idx_usuario` (`usuario_id`);
+
+--
 -- Indices de la tabla `productos`
 --
 ALTER TABLE `productos`
@@ -356,6 +401,15 @@ ALTER TABLE `ventas`
   ADD KEY `cliente_id` (`cliente_id`),
   ADD KEY `usuario_id` (`usuario_id`),
   ADD KEY `caja_id` (`caja_id`);
+
+--
+-- Indices de la tabla `ventas_pagos`
+--
+ALTER TABLE `ventas_pagos`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `venta_id` (`venta_id`),
+  ADD KEY `caja_id` (`caja_id`),
+  ADD KEY `usuario_id` (`usuario_id`);
 
 --
 -- Indices de la tabla `venta_detalle`
@@ -412,6 +466,12 @@ ALTER TABLE `movimientos_caja`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT de la tabla `pagos`
+--
+ALTER TABLE `pagos`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT de la tabla `productos`
 --
 ALTER TABLE `productos`
@@ -445,6 +505,12 @@ ALTER TABLE `usuarios`
 -- AUTO_INCREMENT de la tabla `ventas`
 --
 ALTER TABLE `ventas`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `ventas_pagos`
+--
+ALTER TABLE `ventas_pagos`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
@@ -485,6 +551,13 @@ ALTER TABLE `movimientos_caja`
   ADD CONSTRAINT `movimientos_caja_ibfk_1` FOREIGN KEY (`caja_id`) REFERENCES `cajas` (`id`);
 
 --
+-- Filtros para la tabla `pagos`
+--
+ALTER TABLE `pagos`
+  ADD CONSTRAINT `fk_pagos_caja` FOREIGN KEY (`caja_id`) REFERENCES `cajas` (`id`),
+  ADD CONSTRAINT `fk_pagos_usuario` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`);
+
+--
 -- Filtros para la tabla `productos`
 --
 ALTER TABLE `productos`
@@ -503,6 +576,14 @@ ALTER TABLE `ventas`
   ADD CONSTRAINT `ventas_ibfk_1` FOREIGN KEY (`cliente_id`) REFERENCES `clientes` (`id`),
   ADD CONSTRAINT `ventas_ibfk_2` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`),
   ADD CONSTRAINT `ventas_ibfk_3` FOREIGN KEY (`caja_id`) REFERENCES `cajas` (`id`);
+
+--
+-- Filtros para la tabla `ventas_pagos`
+--
+ALTER TABLE `ventas_pagos`
+  ADD CONSTRAINT `ventas_pagos_ibfk_1` FOREIGN KEY (`venta_id`) REFERENCES `ventas` (`id`),
+  ADD CONSTRAINT `ventas_pagos_ibfk_2` FOREIGN KEY (`caja_id`) REFERENCES `cajas` (`id`),
+  ADD CONSTRAINT `ventas_pagos_ibfk_3` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`);
 
 --
 -- Filtros para la tabla `venta_detalle`
