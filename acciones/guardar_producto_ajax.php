@@ -12,6 +12,7 @@ try {
         throw new Exception("No llegaron datos POST");
     }
 
+    /* ================= DATOS OBLIGATORIOS ================= */
     $nombre = trim($_POST['nombre'] ?? '');
     $precio = $_POST['precio_venta'] ?? null;
 
@@ -19,7 +20,9 @@ try {
         throw new Exception("Nombre y precio obligatorios");
     }
 
+    /* ================= DATOS EXISTENTES ================= */
     $codigo = $_POST['codigo'] ?? null;
+    $descripcion = trim($_POST['descripcion'] ?? null);
     $precio_compra = $_POST['precio_compra'] ?? null;
     $stock = $_POST['stock'] ?? 0;
     $unidad = $_POST['unidad_medida'] ?? 'PIEZA';
@@ -27,10 +30,43 @@ try {
     $categoria_id = $_POST['categoria_id'] ?: null;
     $categoria_nueva = trim($_POST['categoria_nueva'] ?? '');
 
+    /* ================= DATOS FISCALES ================= */
+    $clave_prod_serv = trim($_POST['clave_prod_serv'] ?? '');
+    if ($clave_prod_serv === '') {
+        throw new Exception("Clave producto/servicio SAT obligatoria");
+    }
+
+    // ===== MAPEO AUTOMÁTICO UNIDAD → CLAVE SAT =====
+    $mapa_unidades = [
+        'PIEZA' => 'H87',
+        'KILO'  => 'KGM',
+        'GRAMO' => 'GRM',
+        'LITRO' => 'LTR'
+    ];
+
+    if (!isset($mapa_unidades[$unidad])) {
+        throw new Exception("Unidad de medida no válida");
+    }
+
+    $clave_unidad = $mapa_unidades[$unidad];
+
+    $objeto_impuesto = $_POST['objeto_impuesto'] ?? '02';
+    $tasa_iva = $_POST['tasa_iva'] ?? 0.1600;
+
+    /* ================= NORMALIZAR NÚMEROS ================= */
+    $precio_compra = ($precio_compra === '' || $precio_compra === null)
+        ? null
+        : (float)$precio_compra;
+
+    $precio = (float)$precio;
+    $stock = (float)$stock;
+    $tasa_iva = (float)$tasa_iva;
+
     $conexion->begin_transaction();
 
-    /* ===== CATEGORÍA NUEVA ===== */
+    /* ================= CATEGORÍA NUEVA ================= */
     if ($categoria_nueva !== '') {
+
         $stmt = $conexion->prepare(
             "SELECT id FROM categorias WHERE nombre = ?"
         );
@@ -50,17 +86,34 @@ try {
         }
     }
 
-    /* ===== INSERT PRODUCTO ===== */
+    /* ================= INSERT PRODUCTO ================= */
     $stmt = $conexion->prepare("
-        INSERT INTO productos
-        (codigo, nombre, precio_compra, precio_venta, stock, categoria_id, unidad_medida)
-        VALUES (?,?,?,?,?,?,?)
+        INSERT INTO productos (
+            codigo,
+            nombre,
+            descripcion,
+            clave_prod_serv,
+            clave_unidad,
+            objeto_impuesto,
+            tasa_iva,
+            precio_compra,
+            precio_venta,
+            stock,
+            categoria_id,
+            unidad_medida
+        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
     ");
 
+    // 🔥 bind_param CORRECTO (12 CAMPOS)
     $stmt->bind_param(
-        "ssdddis",
+        "ssssssddddis",
         $codigo,
         $nombre,
+        $descripcion,
+        $clave_prod_serv,
+        $clave_unidad,
+        $objeto_impuesto,
+        $tasa_iva,
         $precio_compra,
         $precio,
         $stock,
@@ -82,7 +135,7 @@ try {
 
 } catch (Exception $e) {
 
-    if ($conexion->errno === 0) {
+    if (isset($conexion)) {
         @$conexion->rollback();
     }
 

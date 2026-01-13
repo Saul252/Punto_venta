@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: localhost
--- Tiempo de generación: 11-01-2026 a las 17:14:07
+-- Tiempo de generación: 13-01-2026 a las 20:48:56
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -79,6 +79,7 @@ CREATE TABLE `empresa` (
   `razon_social` varchar(150) NOT NULL,
   `nombre_comercial` varchar(150) DEFAULT NULL,
   `rfc` varchar(20) NOT NULL,
+  `codigo_postal` varchar(5) NOT NULL,
   `direccion` text DEFAULT NULL,
   `telefono` varchar(20) DEFAULT NULL,
   `email` varchar(100) DEFAULT NULL,
@@ -113,6 +114,24 @@ CREATE TABLE `facturas` (
   `pdf` longtext DEFAULT NULL,
   `estado` enum('PENDIENTE','TIMBRADA','CANCELADA') DEFAULT 'PENDIENTE',
   `fecha` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `factura_conceptos`
+--
+
+CREATE TABLE `factura_conceptos` (
+  `id` int(11) NOT NULL,
+  `factura_id` int(11) NOT NULL,
+  `clave_prod_serv` varchar(10) NOT NULL,
+  `clave_unidad` varchar(5) NOT NULL,
+  `descripcion` varchar(255) NOT NULL,
+  `cantidad` decimal(10,3) NOT NULL,
+  `valor_unitario` decimal(10,2) NOT NULL,
+  `importe` decimal(10,2) NOT NULL,
+  `iva` decimal(10,2) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -181,6 +200,10 @@ CREATE TABLE `productos` (
   `codigo` varchar(50) DEFAULT NULL,
   `nombre` varchar(150) NOT NULL,
   `descripcion` text DEFAULT NULL,
+  `clave_prod_serv` varchar(10) NOT NULL COMMENT 'Clave SAT',
+  `clave_unidad` varchar(5) NOT NULL COMMENT 'Clave SAT',
+  `objeto_impuesto` char(2) NOT NULL DEFAULT '02' COMMENT '01 no objeto, 02 sí objeto',
+  `tasa_iva` decimal(5,4) NOT NULL DEFAULT 0.1600 COMMENT 'IVA SAT',
   `precio_compra` decimal(10,2) DEFAULT NULL,
   `precio_venta` decimal(10,2) NOT NULL,
   `stock` decimal(10,3) NOT NULL DEFAULT 0.000,
@@ -263,7 +286,9 @@ CREATE TABLE `ventas` (
   `estado` enum('ABIERTA','CERRADA','CANCELADA') DEFAULT 'ABIERTA',
   `requiere_factura` tinyint(4) DEFAULT 0,
   `tipo_factura` enum('publico','nombre') DEFAULT 'publico',
-  `nombre_receptor` varchar(150) DEFAULT NULL
+  `nombre_receptor` varchar(150) DEFAULT NULL,
+  `forma_pago` varchar(5) DEFAULT NULL COMMENT 'Clave SAT (01,03,04, etc)',
+  `metodo_pago_sat` varchar(5) DEFAULT 'PUE' COMMENT 'PUE o PPD'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -294,7 +319,8 @@ CREATE TABLE `venta_detalle` (
   `producto_id` int(11) NOT NULL,
   `cantidad` decimal(10,3) NOT NULL,
   `precio` decimal(10,2) NOT NULL,
-  `subtotal` decimal(10,2) NOT NULL
+  `subtotal` decimal(10,2) NOT NULL,
+  `iva` decimal(10,2) NOT NULL DEFAULT 0.00
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -332,6 +358,13 @@ ALTER TABLE `empresa`
 ALTER TABLE `facturas`
   ADD PRIMARY KEY (`id`),
   ADD KEY `venta_id` (`venta_id`);
+
+--
+-- Indices de la tabla `factura_conceptos`
+--
+ALTER TABLE `factura_conceptos`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `fk_factura_conceptos` (`factura_id`);
 
 --
 -- Indices de la tabla `gastos`
@@ -454,6 +487,12 @@ ALTER TABLE `facturas`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT de la tabla `factura_conceptos`
+--
+ALTER TABLE `factura_conceptos`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT de la tabla `gastos`
 --
 ALTER TABLE `gastos`
@@ -534,6 +573,12 @@ ALTER TABLE `cajas`
 --
 ALTER TABLE `facturas`
   ADD CONSTRAINT `facturas_ibfk_1` FOREIGN KEY (`venta_id`) REFERENCES `ventas` (`id`);
+
+--
+-- Filtros para la tabla `factura_conceptos`
+--
+ALTER TABLE `factura_conceptos`
+  ADD CONSTRAINT `fk_factura_conceptos` FOREIGN KEY (`factura_id`) REFERENCES `facturas` (`id`) ON DELETE CASCADE;
 
 --
 -- Filtros para la tabla `gastos`
