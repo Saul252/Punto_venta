@@ -167,15 +167,35 @@ while ($row = $resDetalle->fetch_assoc()) {
         </div>
         </div>
 
-        
+        <!-- TOTALES GENERALES -->
+<div class="card mb-3">
+    <div class="card-body d-flex justify-content-between align-items-center">
+        <h6 class="mb-0">Totales (según filtros)</h6>
+        <div>
+            <span class="me-3">
+                💰 <strong>Total:</strong> $
+                <span id="totalVentas">0.00</span>
+            </span>
+            <span class="text-danger">
+                ⚠ <strong>Saldo:</strong> $
+                <span id="totalSaldo">0.00</span>
+            </span>
+        </div>
+    </div>
+</div>
+
 
         <?php while($v=$ventas->fetch_assoc()):
 $saldo=$v['total']-$v['total_pagado'];
 ?>
-        <div class="venta-card" data-venta="<?= $v['venta_id'] ?>" data-caja="<?= $v['caja_id'] ?>"
-            data-cliente="<?= strtolower($v['cliente']) ?>" data-estado="<?= $v['estado'] ?>"
-            data-fecha="<?= date('Y-m-d',strtotime($v['fecha'])) ?>">
-
+     <div class="venta-card"
+     data-venta="<?= $v['venta_id'] ?>"
+     data-caja="<?= $v['caja_id'] ?>"
+     data-cliente="<?= strtolower($v['cliente']) ?>"
+     data-estado="<?= $v['estado'] ?>"
+     data-fecha="<?= date('Y-m-d',strtotime($v['fecha'])) ?>"
+     data-total="<?= $v['total'] ?>"
+     data-saldo="<?= $saldo ?>">
             <div class="venta-header">
                 <strong>Venta #<?= $v['venta_id'] ?> | Caja <?= $v['caja_id'] ?></strong>
                 <span><?= date('d/m/Y H:i',strtotime($v['fecha'])) ?></span>
@@ -269,28 +289,58 @@ $saldo=$v['total']-$v['total_pagado'];
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.29/dist/jspdf.plugin.autotable.min.js"></script>
+<script>
+const cards = [...document.querySelectorAll('.venta-card')]
+const totalVentas = document.getElementById('totalVentas')
+const totalSaldo  = document.getElementById('totalSaldo')
 
-    <script>
-    const cards = [...document.querySelectorAll('.venta-card')]
+function recalcularTotales() {
+    let t = 0
+    let s = 0
 
-    function filtrar() {
-        cards.forEach(c => {
-            let ok = true
-            if (fVenta.value && !c.dataset.venta.includes(fVenta.value)) ok = false
-            if (fCaja.value && !c.dataset.caja.includes(fCaja.value)) ok = false
-            if (fCliente.value && !c.dataset.cliente.includes(fCliente.value.toLowerCase())) ok = false
-            if (fEstado.value && c.dataset.estado !== fEstado.value) ok = false
-            if (fDesde.value && c.dataset.fecha < fDesde.value) ok = false
-            if (fHasta.value && c.dataset.fecha > fHasta.value) ok = false
-            c.style.display = ok ? '' : 'none'
-        })
-    }
-    [fVenta, fCaja, fCliente, fEstado, fDesde, fHasta].forEach(i => i.oninput = filtrar)
-    btnReset.onclick = () => {
-        fVenta.value = fCaja.value = fCliente.value = fEstado.value = fDesde.value = fHasta.value = '';
-        filtrar()
-    }
-    </script>
+    cards.forEach(c => {
+        if (c.offsetParent !== null) {
+            t += Number(c.dataset.total)
+            s += Number(c.dataset.saldo)
+        }
+    })
+
+    totalVentas.textContent = t.toFixed(2)
+    totalSaldo.textContent  = s.toFixed(2)
+}
+
+function filtrar() {
+    cards.forEach(c => {
+        let ok = true
+
+        if (fVenta.value && !c.dataset.venta.includes(fVenta.value)) ok = false
+        if (fCaja.value && !c.dataset.caja.includes(fCaja.value)) ok = false
+        if (fCliente.value && !c.dataset.cliente.includes(fCliente.value.toLowerCase())) ok = false
+        if (fEstado.value && c.dataset.estado !== fEstado.value) ok = false
+        if (fDesde.value && c.dataset.fecha < fDesde.value) ok = false
+        if (fHasta.value && c.dataset.fecha > fHasta.value) ok = false
+
+        c.style.display = ok ? '' : 'none'
+    })
+
+    recalcularTotales()
+}
+
+[fVenta, fCaja, fCliente, fEstado, fDesde, fHasta].forEach(i => {
+    i.addEventListener('input', filtrar)
+})
+
+btnReset.onclick = () => {
+    fVenta.value = fCaja.value = fCliente.value =
+    fEstado.value = fDesde.value = fHasta.value = ''
+    filtrar()
+}
+
+// cálculo inicial
+recalcularTotales()
+</script>
+
+ 
 
     <script>
     btnCajaExcel.onclick = () => {

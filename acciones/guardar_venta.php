@@ -74,12 +74,80 @@ $metodo     = $_POST['metodo_pago'];
 $carrito    = $_SESSION['carrito'];
 
 $cliente_id = !empty($_POST['cliente_id']) ? (int)$_POST['cliente_id'] : null;
+$requiereFactura = isset($_POST['requiere_factura']) ? 1 : 0;
 
 if ($monto_pago < 0 || $monto_pago > $total) {
     alertError("Monto de pago inválido");
 }
 
 $estado_venta = ($monto_pago >= $total) ? 'CERRADA' : 'ABIERTA';
+
+/* ========= DATOS FISCALES ========= */
+$tipoFactura = null;
+$nombre_receptor = null;
+$rfc = null;
+$razon_social = null;
+$regimen_fiscal = null;
+$uso_cfdi = null;
+$codigo_postal = null;
+$direccion_fiscal = null;
+
+if ($requiereFactura) {
+
+    if ($cliente_id) {
+        // CLIENTE REGISTRADO
+        $stmt = $conexion->prepare("
+            SELECT
+                nombre,
+                rfc,
+                razon_social,
+                regimen_fiscal,
+                uso_cfdi,
+                codigo_postal,
+                direccion_fiscal
+            FROM clientes
+            WHERE id = ?
+        ");
+        $stmt->bind_param("i", $cliente_id);
+        $stmt->execute();
+        $cli = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+
+        if (!$cli) {
+            alertError("Cliente no encontrado");
+        }
+
+        $tipoFactura      = 'publico';
+        $nombre_receptor  = $cli['nombre'];
+        $rfc              = $cli['rfc'];
+        $razon_social     = $cli['razon_social'];
+        $regimen_fiscal   = $cli['regimen_fiscal'];
+        $uso_cfdi         = $cli['uso_cfdi'];
+        $codigo_postal    = $cli['codigo_postal'];
+        $direccion_fiscal = $cli['direccion_fiscal'];
+
+    } else {
+        // PÚBLICO EN GENERAL CON NOMBRE
+        $nombreFactura = trim($_POST['nombre_factura_publico'] ?? '');
+
+        if ($nombreFactura === '') {
+            alertError("Debes capturar el nombre para la factura");
+        }
+
+        $empresa = $conexion->query("
+            SELECT codigo_postal FROM empresa LIMIT 1
+        ")->fetch_assoc();
+
+        $tipoFactura      = 'nombre';
+        $nombre_receptor  = $nombreFactura;
+        $rfc              = 'XAXX010101000';
+        $razon_social     = $nombreFactura;
+        $regimen_fiscal   = '616';
+        $uso_cfdi         = 'P01';
+        $codigo_postal    = $empresa['codigo_postal'];
+        $direccion_fiscal = null;
+    }
+}
 
 /* ========= TRANSACCIÓN ========= */
 $conexion->begin_transaction();
@@ -88,19 +156,44 @@ try {
 
     /* ========= VENTA ========= */
     $stmt = $conexion->prepare("
-        INSERT INTO ventas
-        (cliente_id, usuario_id, caja_id, total, total_pagado, metodo_pago, estado)
-        VALUES (?,?,?,?,?,?,?)
+        INSERT INTO ventas (
+            cliente_id,
+            usuario_id,
+            caja_id,
+            total,
+            total_pagado,
+            metodo_pago,
+            estado,
+            requiere_factura,
+            tipo_factura,
+            nombre_receptor,
+            rfc,
+            razon_social,
+            regimen_fiscal,
+            uso_cfdi,
+            codigo_postal,
+            direccion_fiscal
+        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
     ");
+
     $stmt->bind_param(
-        "iiiddss",
+        "iiiddssissssssss",
         $cliente_id,
         $usuario_id,
         $caja_id,
         $total,
         $monto_pago,
         $metodo,
-        $estado_venta
+        $estado_venta,
+        $requiereFactura,
+        $tipoFactura,
+        $nombre_receptor,
+        $rfc,
+        $razon_social,
+        $regimen_fiscal,
+        $uso_cfdi,
+        $codigo_postal,
+        $direccion_fiscal
     );
 
     if (!$stmt->execute()) {
@@ -144,57 +237,38 @@ try {
     $stmtDet->close();
     $stmtStock->close();
 
-    /* ========= PAGOS ========= */
+    /* ========= PAGOS / CAJA ========= */
     if ($monto_pago > 0) {
 
-        /* ventas_pagos */
         $stmtVP = $conexion->prepare("
             INSERT INTO ventas_pagos
             (venta_id, caja_id, usuario_id, monto, metodo_pago)
             VALUES (?,?,?,?,?)
         ");
         $stmtVP->bind_param("iiids", $venta_id, $caja_id, $usuario_id, $monto_pago, $metodo);
-        if (!$stmtVP->execute()) {
-            throw new Exception("Error en ventas_pagos");
-        }
+        $stmtVP->execute();
         $stmtVP->close();
 
-        /* pagos (tabla general) */
         $stmtPago = $conexion->prepare("
             INSERT INTO pagos
             (tipo, referencia_id, caja_id, usuario_id, monto, metodo_pago, referencia)
             VALUES ('VENTA', ?, ?, ?, ?, ?, ?)
         ");
         $referencia = "Venta #{$venta_id}";
-        $stmtPago->bind_param(
-            "iiidss",
-            $venta_id,
-            $caja_id,
-            $usuario_id,
-            $monto_pago,
-            $metodo,
-            $referencia
-        );
-
-        if (!$stmtPago->execute()) {
-            throw new Exception("Error al registrar en pagos");
-        }
+        $stmtPago->bind_param("iiidss", $venta_id, $caja_id, $usuario_id, $monto_pago, $metodo, $referencia);
+        $stmtPago->execute();
         $stmtPago->close();
 
-        /* movimiento caja */
         $stmtMov = $conexion->prepare("
             INSERT INTO movimientos_caja
             (caja_id, tipo, descripcion, monto)
             VALUES (?, 'INGRESO', ?, ?)
         ");
         $stmtMov->bind_param("isd", $caja_id, $referencia, $monto_pago);
-        if (!$stmtMov->execute()) {
-            throw new Exception("Error en movimiento de caja");
-        }
+        $stmtMov->execute();
         $stmtMov->close();
     }
 
-    /* ========= CONFIRMAR ========= */
     $conexion->commit();
     unset($_SESSION['carrito'], $_SESSION['total']);
 
