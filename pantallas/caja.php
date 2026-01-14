@@ -8,6 +8,8 @@ require_once __DIR__ . '/../conexion.php';
 /* ===============================
    OBTENER VENTAS + PAGOS
 ================================ */
+date_default_timezone_set('America/Mexico_City');
+
 $sql = "
 SELECT 
     v.id AS venta_id,
@@ -64,11 +66,15 @@ while ($row = $resDetalle->fetch_assoc()) {
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
     <style>
-    .page-content {
-        background: #858b93ff;
-        padding: 20px;
-        min-height: calc(100vh - 70px)
-    }
+        body{
+            background-color:#0d1b2a;
+
+        }
+   .page-content {
+    background: linear-gradient(135deg, #1066bb, #065d7a, #00b3ff);
+    padding: 25px;
+    min-height: calc(100vh - 70px);
+}
 
     .venta-card {
         background: #fff;
@@ -134,6 +140,105 @@ while ($row = $resDetalle->fetch_assoc()) {
     .detalle-venta td {
         padding: 6px;
     }
+    /* ===== GLASS EFFECT ===== */
+.card,
+.venta-card {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+    color: #fff;
+}
+.venta-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.venta-info span,
+.totales,
+.card-body {
+    color: #f1f5f9;
+}
+.badge-abierta {
+    background: rgba(40, 167, 69, 0.85);
+    backdrop-filter: blur(6px);
+    border-radius: 20px;
+    padding: 6px 14px;
+}
+
+.badge-cerrada {
+    background: rgba(13, 110, 253, 0.85);
+    backdrop-filter: blur(6px);
+    border-radius: 20px;
+    padding: 6px 14px;
+}
+.detalle-venta {
+    background: rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    padding: 12px;
+    margin-top: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.detalle-venta table {
+    color: #fff;
+}
+
+.detalle-venta th {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+}
+.venta-card {
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.venta-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+}
+.form-control,
+.form-select {
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #fff;
+}
+
+.form-control::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.form-control:focus,
+.form-select:focus {
+    background: rgba(255, 255, 255, 0.25);
+    color: #fff;
+    border-color: #66b2ff;
+    box-shadow: 0 0 0 0.2rem rgba(102, 178, 255, 0.25);
+}
+.texto-negro{
+    color:#000;
+}
+.borde {
+    background: rgba(255, 255, 255, 0.85);
+    border: 2px solid rgba(13, 110, 253, 0.35); /* azul Bootstrap */
+    border-radius: 10px;
+    color: #212529;
+    backdrop-filter: blur(4px);
+    transition: all .2s ease-in-out;
+}
+
+.borde:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13,110,253,.25);
+    background: rgba(255,255,255,0.95);
+}
+
+.borde::placeholder {
+    color: #6c757d;
+}
     </style>
 </head>
 
@@ -144,58 +249,95 @@ while ($row = $resDetalle->fetch_assoc()) {
         <h4 class="mb-3">📦 Ventas por Caja</h4>
 
         <!-- FILTROS -->
-        <div class="card mb-3">
-            <div class="card-body">
-                <div class="row g-2 align-items-end">
-                    <input class="form-control col" id="fVenta" placeholder="Venta">
-                    <input class="form-control col" id="fCaja" placeholder="Caja">
-                    <input class="form-control col" id="fCliente" placeholder="Cliente">
-                    <select class="form-select col" id="fEstado">
-                        <option value="">Estado</option>
-                        <option value="ABIERTA">ABIERTA</option>
-                        <option value="CERRADA">CERRADA</option>
-                    </select>
-                    <input type="date" class="form-control col" id="fDesde">
-                    <input type="date" class="form-control col" id="fHasta">
-                    <button class="btn btn-outline-secondary col" id="btnReset">🔄</button>
-                </div>
-                
-            </div>
-<div class="d-flex gap-2 mb-3 justify-content-end">
-            <button class="btn btn-outline-success btn-sm" id="btnCajaExcel">📊 Importar a Excel</button>
-            <button class="btn btn-outline-danger btn-sm" id="btnCajaPdf">📄 Importar a PDF</button>
-        </div>
-        </div>
-
-        <!-- TOTALES GENERALES -->
+        <!-- FILTROS -->
 <div class="card mb-3">
-    <div class="card-body d-flex justify-content-between align-items-center">
-        <h6 class="mb-0">Totales (según filtros)</h6>
-        <div>
-            <span class="me-3">
-                💰 <strong>Total:</strong> $
-                <span id="totalVentas">0.00</span>
-            </span>
-            <span class="text-danger">
-                ⚠ <strong>Saldo:</strong> $
-                <span id="totalSaldo">0.00</span>
-            </span>
+    <div class="card-body">
+        <div class="row g-3">
+
+            <div class="col-md-2">
+                <label class="form-label">Venta #</label>
+                <input class="form-control" id="fVenta" placeholder="Ej. 123">
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label">Caja</label>
+                <input class="form-control" id="fCaja" placeholder="Ej. 1">
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label">Cliente</label>
+                <input class="form-control" id="fCliente" placeholder="Nombre del cliente">
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label">Estado</label>
+                <select class="form-select" id="fEstado">
+                    <option class="texto-negro"  value="">Todos</option>
+                    <option class="texto-negro" value="ABIERTA">Abierta</option>
+                    <option class="texto-negro" value="CERRADA">Cerrada</option>
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label">Rango de fechas</label>
+                <select class="form-select" id="fRango">
+                    <option class="texto-negro" value="HOY">Hoy</option>
+                    <option class="texto-negro" value="AYER">Ayer</option>
+                    <option class="texto-negro" value="SEMANA">Esta semana</option>
+                    <option class="texto-negro" value="MES">Este mes</option>
+                    <option class="texto-negro" value="PERSONALIZADO">Personalizado</option>
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label">Fecha inicio</label>
+                <input type="date" class="form-control" id="fDesde" disabled>
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label">Fecha fin</label>
+                <input type="date" class="form-control" id="fHasta" disabled>
+            </div>
+
+            <div class="col-md-2 d-flex align-items-end">
+                <button class="btn btn-primary " id="btnReset">Restear filtros 🔄</button>
+            </div>
+
         </div>
     </div>
+
+    <div class="d-flex gap-2 mb-3 justify-content-end px-3">
+        <button class="btn btn-success btn-sm" id="btnCajaExcel">📊 Exportar Excel</button>
+        <button class="btn btn-danger btn-sm" id="btnCajaPdf">📄 Exportar PDF</button>
+    </div>
 </div>
+
+
+        <!-- TOTALES GENERALES -->
+        <div class="card mb-3">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">Totales (según filtros)</h6>
+                <div>
+                    <span class="me-3">
+                        💰 <strong>Total:</strong> $
+                        <span id="totalVentas">0.00</span>
+                    </span>
+                    <span class="text-danger">
+                        ⚠ <strong>Saldo:</strong> $
+                        <span id="totalSaldo">0.00</span>
+                    </span>
+                </div>
+            </div>
+        </div>
 
 
         <?php while($v=$ventas->fetch_assoc()):
 $saldo=$v['total']-$v['total_pagado'];
 ?>
-     <div class="venta-card"
-     data-venta="<?= $v['venta_id'] ?>"
-     data-caja="<?= $v['caja_id'] ?>"
-     data-cliente="<?= strtolower($v['cliente']) ?>"
-     data-estado="<?= $v['estado'] ?>"
-     data-fecha="<?= date('Y-m-d',strtotime($v['fecha'])) ?>"
-     data-total="<?= $v['total'] ?>"
-     data-saldo="<?= $saldo ?>">
+        <div class="venta-card" data-venta="<?= $v['venta_id'] ?>" data-caja="<?= $v['caja_id'] ?>"
+            data-cliente="<?= strtolower($v['cliente']) ?>" data-estado="<?= $v['estado'] ?>"
+            data-fecha="<?= date('Y-m-d',strtotime($v['fecha'])) ?>" data-total="<?= $v['total'] ?>"
+            data-saldo="<?= $saldo ?>">
             <div class="venta-header">
                 <strong>Venta #<?= $v['venta_id'] ?> | Caja <?= $v['caja_id'] ?></strong>
                 <span><?= date('d/m/Y H:i',strtotime($v['fecha'])) ?></span>
@@ -218,7 +360,7 @@ $saldo=$v['total']-$v['total_pagado'];
 
                 <div class="d-flex gap-2">
                     <a href="/punto/acciones/imprimir_venta.php?id=<?= $v['venta_id'] ?>" target="_blank"
-                        class="btn btn-outline-primary btn-sm">🖨 Imprimir</a>
+                        class="btn btn-primary btn-sm">🖨 Imprimir</a>
 
                     <?php if($v['estado']=='ABIERTA'): ?>
                     <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#modalPago"
@@ -266,18 +408,61 @@ $saldo=$v['total']-$v['total_pagado'];
                     <h5>Abonar pago</h5>
                     <button class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body">
-                    <input type="hidden" name="venta_id" id="pagoVentaId">
-                    <p>Total: $<span id="pTotal"></span></p>
-                    <p>Pagado: $<span id="pPagado"></span></p>
-                    <p class="text-danger">Saldo: $<span id="pSaldo"></span></p>
-                    <input type="number" class="form-control" name="monto" id="pMonto" step="0.01" required>
-                    <select class="form-select mt-2" name="metodo_pago">
-                        <option>EFECTIVO</option>
-                        <option>TARJETA</option>
-                        <option>TRANSFERENCIA</option>
-                    </select>
+                <div class="modal-body bg-light text-dark rounded-3">
+
+    <input type="hidden" name="venta_id" id="pagoVentaId">
+
+    <div class="row g-2 mb-3">
+        <div class="col-4">
+            <div class="p-2 border rounded text-center bg-white">
+                <small class="text-muted">Total</small>
+                <div class="fw-bold text-primary">
+                    $<span id="pTotal"></span>
                 </div>
+            </div>
+        </div>
+
+        <div class="col-4">
+            <div class="p-2 border rounded text-center bg-white">
+                <small class="text-muted">Pagado</small>
+                <div class="fw-bold text-success">
+                    $<span id="pPagado"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-4">
+            <div class="p-2 border rounded text-center bg-white">
+                <small class="text-muted">Saldo</small>
+                <div class="fw-bold text-danger">
+                    $<span id="pSaldo"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label fw-semibold ">Monto a pagar</label>
+       <input type="number"
+       class="form-control form-control-lg borde text-dark"
+       name="monto"
+       id="pMonto"
+       step="0.01"
+       required>
+
+    </div>
+
+    <div class="mb-2">
+        <label class="form-label fw-semibold">Método de pago</label>
+        <select class="form-select form-select-lg borde" name="metodo_pago">
+            <option class="texto-negro" value="EFECTIVO">💵 Efectivo</option>
+            <option class="texto-negro" value="TARJETA">💳 Tarjeta</option>
+            <option class="texto-negro" value="TRANSFERENCIA">🏦 Transferencia</option>
+        </select>
+    </div>
+
+</div>
+
                 <div class="modal-footer">
                     <button class="btn btn-success">Guardar</button>
                 </div>
@@ -289,58 +474,60 @@ $saldo=$v['total']-$v['total_pagado'];
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.29/dist/jspdf.plugin.autotable.min.js"></script>
-<script>
-const cards = [...document.querySelectorAll('.venta-card')]
-const totalVentas = document.getElementById('totalVentas')
-const totalSaldo  = document.getElementById('totalSaldo')
+    <script>
+    const cards = [...document.querySelectorAll('.venta-card')]
+    const totalVentas = document.getElementById('totalVentas')
+    const totalSaldo = document.getElementById('totalSaldo')
 
-function recalcularTotales() {
-    let t = 0
-    let s = 0
+    function recalcularTotales() {
+        let t = 0
+        let s = 0
 
-    cards.forEach(c => {
-        if (c.offsetParent !== null) {
-            t += Number(c.dataset.total)
-            s += Number(c.dataset.saldo)
-        }
+        cards.forEach(c => {
+            if (c.offsetParent !== null) {
+                t += Number(c.dataset.total)
+                s += Number(c.dataset.saldo)
+            }
+        })
+
+        totalVentas.textContent = t.toFixed(2)
+        totalSaldo.textContent = s.toFixed(2)
+    }
+
+    function filtrar() {
+        cards.forEach(c => {
+            let ok = true
+
+            if (fVenta.value && !c.dataset.venta.includes(fVenta.value)) ok = false
+            if (fCaja.value && !c.dataset.caja.includes(fCaja.value)) ok = false
+            if (fCliente.value && !c.dataset.cliente.includes(fCliente.value.toLowerCase())) ok = false
+            if (fEstado.value && c.dataset.estado !== fEstado.value) ok = false
+            if (fDesde.value && c.dataset.fecha < fDesde.value) ok = false
+            if (fHasta.value && c.dataset.fecha > fHasta.value) ok = false
+
+            c.style.display = ok ? '' : 'none'
+        })
+
+        recalcularTotales()
+    }
+
+    [fVenta, fCaja, fCliente, fEstado, fDesde, fHasta].forEach(i => {
+        i.addEventListener('input', filtrar)
     })
 
-    totalVentas.textContent = t.toFixed(2)
-    totalSaldo.textContent  = s.toFixed(2)
+   btnReset.onclick = () => {
+    fVenta.value = fCaja.value = fCliente.value = ''
+    fEstado.value = ''
+    fRango.value = 'HOY'
+    setRango('HOY')
 }
 
-function filtrar() {
-    cards.forEach(c => {
-        let ok = true
 
-        if (fVenta.value && !c.dataset.venta.includes(fVenta.value)) ok = false
-        if (fCaja.value && !c.dataset.caja.includes(fCaja.value)) ok = false
-        if (fCliente.value && !c.dataset.cliente.includes(fCliente.value.toLowerCase())) ok = false
-        if (fEstado.value && c.dataset.estado !== fEstado.value) ok = false
-        if (fDesde.value && c.dataset.fecha < fDesde.value) ok = false
-        if (fHasta.value && c.dataset.fecha > fHasta.value) ok = false
-
-        c.style.display = ok ? '' : 'none'
-    })
-
+    // cálculo inicial
     recalcularTotales()
-}
+    </script>
 
-[fVenta, fCaja, fCliente, fEstado, fDesde, fHasta].forEach(i => {
-    i.addEventListener('input', filtrar)
-})
 
-btnReset.onclick = () => {
-    fVenta.value = fCaja.value = fCliente.value =
-    fEstado.value = fDesde.value = fHasta.value = ''
-    filtrar()
-}
-
-// cálculo inicial
-recalcularTotales()
-</script>
-
- 
 
     <script>
     btnCajaExcel.onclick = () => {
@@ -406,5 +593,65 @@ recalcularTotales()
     </script>
 
 </body>
+<script>
+const fRango = document.getElementById('fRango')
+
+function hoyMX() {
+    const d = new Date()
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset())
+    return d.toISOString().split('T')[0]
+}
+
+function setRango(tipo) {
+    const hoy = new Date()
+    let desde = null
+    let hasta = null
+
+    switch (tipo) {
+        case 'HOY':
+            desde = hasta = hoy
+            break
+
+        case 'AYER':
+            desde = hasta = new Date(hoy.setDate(hoy.getDate() - 1))
+            break
+
+        case 'SEMANA':
+            const dia = hoy.getDay() || 7
+            desde = new Date(hoy)
+            desde.setDate(hoy.getDate() - dia + 1)
+            hasta = new Date()
+            break
+
+        case 'MES':
+            desde = new Date(hoy.getFullYear(), hoy.getMonth(), 1)
+            hasta = new Date()
+            break
+
+        case 'PERSONALIZADO':
+            fDesde.disabled = false
+            fHasta.disabled = false
+            return
+    }
+
+    fDesde.disabled = true
+    fHasta.disabled = true
+
+    fDesde.value = desde.toISOString().split('T')[0]
+    fHasta.value = hasta.toISOString().split('T')[0]
+
+    filtrar()
+}
+
+fRango.addEventListener('change', e => {
+    setRango(e.target.value)
+})
+
+fDesde.addEventListener('change', filtrar)
+fHasta.addEventListener('change', filtrar)
+
+// 🔥 Inicializar en HOY
+setRango('HOY')
+</script>
 
 </html>
