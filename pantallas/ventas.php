@@ -163,29 +163,24 @@ while($c=$clientes->fetch_assoc()):
                                 ➕ Nuevo
                             </button>
                         </div>
-<!-- ================= FACTURA ================= -->
-<div class="form-check mb-3">
-    <input class="form-check-input"
-           type="checkbox"
-           id="requiereFactura"
-           name="requiere_factura"
-           value="1">
-    <label class="form-check-label">
-        Requiere factura
-    </label>
-</div>
+                        <!-- ================= FACTURA ================= -->
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="requiereFactura" name="requiere_factura"
+                                value="1">
+                            <label class="form-check-label">
+                                Requiere factura
+                            </label>
+                        </div>
 
-<!-- SOLO PARA PÚBLICO GENERAL -->
-<div id="nombrePublicoFactura" style="display:none">
-    <label class="form-label">
-        Nombre para la factura
-        <small class="text-muted">(Público en general)</small>
-    </label>
-    <input type="text"
-           class="form-control"
-           name="nombre_factura_publico"
-           placeholder="Ej. Juan Pérez">
-</div>
+                        <!-- SOLO PARA PÚBLICO G<<<<<<aENERAL -->
+                        <div id="nombrePublicoFactura" style="display:none">
+                            <label class="form-label">
+                                Nombre para la factura
+                                <small class="text-muted">(Público en general)</small>
+                            </label>
+                            <input type="text" class="form-control" name="nombre_factura_publico"
+                                placeholder="Ej. Juan Pérez">
+                        </div>
 
                         <label class="form-label">Método de pago</label>
                         <select class="form-select mb-3" name="metodo_pago" required>
@@ -200,12 +195,10 @@ while($c=$clientes->fetch_assoc()):
                     </div>
 
                     <div class="modal-footer">
-                       <button type="button"
-        class="btn btn-secondary"
-        data-bs-dismiss="modal">
-    Cancelar
-</button>
- 
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            Cancelar
+                        </button>
+
                         <button class="btn btn-success">💾 Confirmar venta</button>
                     </div>
 
@@ -215,101 +208,99 @@ while($c=$clientes->fetch_assoc()):
     </div>
 
     <!-- ================= MODAL CLIENTE ================= -->
-  <div class="modal fade" id="modalCliente" tabindex="-1">
-  <div class="modal-dialog modal-lg modal-dialog-centered">
-    <div class="modal-content">
+    <div class="modal fade" id="modalCliente" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
 
-      <form id="formCliente">
+                <form id="formCliente">
 
-        <div class="modal-header">
-          <h5 class="modal-title">Nuevo cliente</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <div class="modal-header">
+                        <h5 class="modal-title">Nuevo cliente</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+
+                    <div class="modal-body">
+
+                        <!-- NOMBRE -->
+                        <div class="mb-3">
+                            <label class="form-label">Nombre *</label>
+                            <input type="text" name="nombre" class="form-control" required>
+                        </div>
+
+                        <!-- RFC -->
+                        <div class="mb-3">
+                            <label class="form-label">RFC</label>
+                            <input type="text" name="rfc" class="form-control">
+                        </div>
+
+                        <!-- RAZÓN SOCIAL -->
+                        <div class="mb-3">
+                            <label class="form-label">Razón social</label>
+                            <input type="text" name="razon_social" class="form-control">
+                        </div>
+
+                        <!-- DOCUMENTO -->
+                        <div class="mb-3">
+                            <label class="form-label">Documento</label>
+                            <input type="text" name="documento" class="form-control" placeholder="INE / CURP / RFC">
+                        </div>
+
+                        <div class="row">
+                            <!-- TELÉFONO -->
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Teléfono</label>
+                                <input type="text" name="telefono" class="form-control">
+                            </div>
+
+                            <!-- EMAIL -->
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Email</label>
+                                <input type="email" name="email" class="form-control">
+                            </div>
+                        </div>
+
+                        <!-- DIRECCIÓN FISCAL -->
+                        <div class="mb-3">
+                            <label class="form-label">Dirección fiscal</label>
+                            <textarea name="direccion_fiscal" class="form-control" rows="2"></textarea>
+                        </div>
+
+                        <div class="row">
+                            <!-- CP -->
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Código postal</label>
+                                <input type="text" name="codigo_postal" class="form-control">
+                            </div>
+
+                            <!-- RÉGIMEN -->
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Régimen fiscal</label>
+                                <input type="text" name="regimen_fiscal" class="form-control">
+                            </div>
+                        </div>
+
+                        <!-- USO CFDI -->
+                        <div class="mb-3">
+                            <label class="form-label">Uso CFDI</label>
+                            <input type="text" name="uso_cfdi" class="form-control" placeholder="G01, G03, P01...">
+                        </div>
+
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            Cancelar
+                        </button>
+                        <button class="btn btn-primary">
+                            💾 Guardar cliente
+                        </button>
+                    </div>
+
+                </form>
+
+            </div>
         </div>
-
-        <div class="modal-body">
-
-          <!-- NOMBRE -->
-          <div class="mb-3">
-            <label class="form-label">Nombre *</label>
-            <input type="text" name="nombre" class="form-control" required>
-          </div>
-
-          <!-- RFC -->
-          <div class="mb-3">
-            <label class="form-label">RFC</label>
-            <input type="text" name="rfc" class="form-control">
-          </div>
-
-          <!-- RAZÓN SOCIAL -->
-          <div class="mb-3">
-            <label class="form-label">Razón social</label>
-            <input type="text" name="razon_social" class="form-control">
-          </div>
-
-          <!-- DOCUMENTO -->
-          <div class="mb-3">
-            <label class="form-label">Documento</label>
-            <input type="text" name="documento" class="form-control"
-                   placeholder="INE / CURP / RFC">
-          </div>
-
-          <div class="row">
-            <!-- TELÉFONO -->
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Teléfono</label>
-              <input type="text" name="telefono" class="form-control">
-            </div>
-
-            <!-- EMAIL -->
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Email</label>
-              <input type="email" name="email" class="form-control">
-            </div>
-          </div>
-
-          <!-- DIRECCIÓN FISCAL -->
-          <div class="mb-3">
-            <label class="form-label">Dirección fiscal</label>
-            <textarea name="direccion_fiscal" class="form-control" rows="2"></textarea>
-          </div>
-
-          <div class="row">
-            <!-- CP -->
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Código postal</label>
-              <input type="text" name="codigo_postal" class="form-control">
-            </div>
-
-            <!-- RÉGIMEN -->
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Régimen fiscal</label>
-              <input type="text" name="regimen_fiscal" class="form-control">
-            </div>
-          </div>
-
-          <!-- USO CFDI -->
-          <div class="mb-3">
-            <label class="form-label">Uso CFDI</label>
-            <input type="text" name="uso_cfdi" class="form-control"
-                   placeholder="G01, G03, P01...">
-          </div>
-
-        </div>
-
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-            Cancelar
-          </button>
-          <button class="btn btn-primary">
-            💾 Guardar cliente
-          </button>
-        </div>
-
-      </form>
-
     </div>
-  </div>
-</div>
 
 
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
@@ -318,8 +309,23 @@ while($c=$clientes->fetch_assoc()):
     <script>
     /* ================== PRODUCTOS ================== */
     const tabla = document.getElementById('tabla-productos');
-    fetch('ajax_buscar_productos.php')
-        .then(r => r.text()).then(h => tabla.innerHTML = h);
+    const inputBuscar = document.getElementById('buscar');
+
+    function cargarProductos(texto = '') {
+        fetch('ajax_buscar_productos.php?q=' + encodeURIComponent(texto))
+            .then(r => r.text())
+            .then(html => {
+                tabla.innerHTML = html;
+            });
+    }
+
+    // Cargar productos al iniciar
+    cargarProductos();
+
+    // Buscar en tiempo real
+    inputBuscar.addEventListener('keyup', function() {
+        cargarProductos(this.value);
+    });
 
     /* ================== CARRITO ================== */
     let carrito = [];
@@ -410,24 +416,62 @@ while($c=$clientes->fetch_assoc()):
         document.body.classList.add('modal-open');
     });
     </script>
-<script>
+    <script>
     const chkFactura = document.getElementById('requiereFactura');
-const clienteSelect = document.getElementById('cliente_id');
-const campoPublico = document.getElementById('nombrePublicoFactura');
+    const clienteSelect = document.getElementById('cliente_id');
+    const campoPublico = document.getElementById('nombrePublicoFactura');
 
-function validarFactura() {
-    // Si requiere factura y NO hay cliente seleccionado
-    if (chkFactura.checked && !clienteSelect.value) {
-        campoPublico.style.display = 'block';
-    } else {
-        campoPublico.style.display = 'none';
+    function validarFactura() {
+        // Si requiere factura y NO hay cliente seleccionado
+        if (chkFactura.checked && !clienteSelect.value) {
+            campoPublico.style.display = 'block';
+        } else {
+            campoPublico.style.display = 'none';
+        }
     }
-}
 
-chkFactura.addEventListener('change', validarFactura);
-clienteSelect.addEventListener('change', validarFactura);
+    chkFactura.addEventListener('change', validarFactura);
+    clienteSelect.addEventListener('change', validarFactura);
+    </script>
+    <script>
+    document.getElementById('formCliente').addEventListener('submit', function(e) {
+        e.preventDefault();
 
-</script>
+        const form = this;
+        const data = new FormData(form);
+
+        fetch('/punto/acciones/guardar_cliente.php', {
+                method: 'POST',
+                body: data
+            })
+            .then(r => r.json())
+            .then(resp => {
+
+                if (!resp.ok) {
+                    alert(resp.msg || 'Error al guardar cliente');
+                    return;
+                }
+
+                // Agregar cliente al select
+                const select = document.getElementById('cliente_id');
+                const option = document.createElement('option');
+                option.value = resp.id;
+                option.textContent = resp.nombre;
+                option.selected = true;
+                select.appendChild(option);
+
+                // Resetear formulario
+                form.reset();
+
+                // Cerrar modal
+                bootstrap.Modal.getInstance(
+                    document.getElementById('modalCliente')
+                ).hide();
+            })
+            .catch(() => alert('Error de conexión'));
+    });
+    </script>
+
 </body>
 
 </html>

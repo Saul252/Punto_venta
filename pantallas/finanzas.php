@@ -34,22 +34,25 @@ switch ($rango) {
 }
 
 /* =========================
-   TOTALES
+   TOTALES (MODELO CAJA)
 ========================= */
+
+/* 💰 DINERO REAL COBRADO */
 $totalVentas = $conexion->query("
-    SELECT IFNULL(SUM(total),0) total
-    FROM ventas
-    WHERE estado='CERRADA'
+    SELECT IFNULL(SUM(monto),0) total
+    FROM pagos
+    WHERE tipo = 'VENTA'
     AND DATE(fecha) BETWEEN '$desde' AND '$hasta'
 ")->fetch_assoc()['total'];
 
+/* 💸 GASTOS */
 $totalGastos = $conexion->query("
     SELECT IFNULL(SUM(monto),0) total
     FROM gastos
     WHERE DATE(fecha) BETWEEN '$desde' AND '$hasta'
 ")->fetch_assoc()['total'];
 
-/* 🔴 ADEUDOS = ventas ABIERTAS */
+/* 📉 ADEUDOS (SALDOS ABIERTOS) */
 $totalAdeudos = $conexion->query("
     SELECT IFNULL(SUM(total - total_pagado),0) total
     FROM ventas
@@ -57,7 +60,8 @@ $totalAdeudos = $conexion->query("
     AND DATE(fecha) BETWEEN '$desde' AND '$hasta'
 ")->fetch_assoc()['total'];
 
-$balance = $totalVentas - ($totalGastos + $totalAdeudos);
+/* 📊 BALANCE REAL */
+$balance = $totalVentas - $totalGastos;
 
 /* =========================
    MOVIMIENTOS
@@ -67,11 +71,11 @@ $movimientos = $conexion->query("
     SELECT 
         fecha,
         'VENTA' tipo,
-        CONCAT('Venta #',id) descripcion,
+        CONCAT('Venta #', referencia_id) descripcion,
         metodo_pago metodo,
-        total monto
-    FROM ventas
-    WHERE estado='CERRADA'
+        monto monto
+    FROM pagos
+    WHERE tipo='VENTA'
     AND DATE(fecha) BETWEEN '$desde' AND '$hasta'
 )
 UNION ALL
@@ -114,9 +118,9 @@ SUM(ventas) ventas,
 SUM(gastos) gastos,
 SUM(adeudos) adeudos
 FROM (
-    SELECT DATE(fecha) d, total ventas, 0 gastos, 0 adeudos
-    FROM ventas
-    WHERE estado='CERRADA'
+    SELECT DATE(fecha) d, monto ventas, 0 gastos, 0 adeudos
+    FROM pagos
+    WHERE tipo='VENTA'
     AND DATE(fecha) BETWEEN '$desde' AND '$hasta'
 
     UNION ALL
@@ -134,7 +138,7 @@ GROUP BY d
 ORDER BY d
 ");
 
-while($g = $graf->fetch_assoc()){
+while ($g = $graf->fetch_assoc()) {
     $labels[]     = $g['d'];
     $ventasDia[]  = $g['ventas'];
     $gastosDia[]  = $g['gastos'];
@@ -143,7 +147,6 @@ while($g = $graf->fetch_assoc()){
 ?>
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
     <title>Finanzas</title>
@@ -152,178 +155,130 @@ while($g = $graf->fetch_assoc()){
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
-    body {
-        background: #eef2f7
-    }
-
-    .glass {
-        background: rgba(255, 255, 255, .8);
-        backdrop-filter: blur(14px);
-        border-radius: 18px;
-        border: 1px solid rgba(255, 255, 255, .4);
-        box-shadow: 0 15px 35px rgba(0, 0, 0, .1)
-    }
-
-    .borde {
-        background: #fff;
-        border: 2px solid rgba(13, 110, 253, .35);
-        border-radius: 12px;
-        color: #212529 !important;
-        -webkit-text-fill-color: #212529
-    }
+        body { background: #eef2f7 }
+        .glass {
+            background: rgba(255,255,255,.8);
+            backdrop-filter: blur(14px);
+            border-radius: 18px;
+            border: 1px solid rgba(255,255,255,.4);
+            box-shadow: 0 15px 35px rgba(0,0,0,.1)
+        }
+        .borde {
+            background:#fff;
+            border:2px solid rgba(13,110,253,.35);
+            border-radius:12px;
+            color:#212529!important;
+            -webkit-text-fill-color:#212529
+        }
     </style>
 </head>
 
 <body>
-    <?php renderSidebar(paginaActual: 'Finanzas'); ?>
-    <div class="container py-4">
+<?php renderSidebar(paginaActual:'Finanzas'); ?>
 
-        <h3 class="fw-bold mb-3">📊 Finanzas / Balance</h3>
+<div class="container py-4">
 
-        <!-- ================= FILTROS ================= -->
-        <form class="glass p-4 mb-4" method="GET">
-            <div class="row g-3 align-items-end">
-                <div class="col-md-3">
-                    <label class="form-label">Rango</label>
-                    <select name="rango" class="form-select borde">
-                        <?php foreach(['HOY','AYER','SEMANA','MES','PERSONALIZADO'] as $op): ?>
-                        <option value="<?= $op ?>" <?= $rango==$op?'selected':'' ?>><?= $op ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Desde</label>
-                    <input type="date" name="desde" class="form-control borde" value="<?= $desde ?>"
-                        <?= $rango!='PERSONALIZADO'?'disabled':'' ?>>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Hasta</label>
-                    <input type="date" name="hasta" class="form-control borde" value="<?= $hasta ?>"
-                        <?= $rango!='PERSONALIZADO'?'disabled':'' ?>>
-                </div>
-                <div class="col-md-3">
-                    <button class="btn btn-primary w-100">🔍 Aplicar</button>
-                </div>
-            </div>
-        </form>
+<h3 class="fw-bold mb-3">📊 Finanzas / Balance</h3>
 
-        <!-- ================= TARJETAS ================= -->
-        <div class="row g-3 mb-4">
-            <div class="col-md-3">
-                <div class="glass p-3 text-center">
-                    <h6 class="text-muted">💰 Ventas</h6>
-                    <h3 class="text-success">$<?= number_format($totalVentas,2) ?></h3>
-                </div>
-            </div>
-
-            <div class="col-md-3">
-                <div class="glass p-3 text-center">
-                    <h6 class="text-muted">💸 Gastos</h6>
-                    <h3 class="text-danger">$<?= number_format($totalGastos,2) ?></h3>
-                </div>
-            </div>
-
-            <div class="col-md-3">
-                <div class="glass p-3 text-center">
-                    <h6 class="text-muted">📉 Adeudos</h6>
-                    <h3 class="text-warning">$<?= number_format($totalAdeudos,2) ?></h3>
-                </div>
-            </div>
-
-            <div class="col-md-3">
-                <div class="glass p-3 text-center">
-                    <h6 class="text-muted">📊 Balance</h6>
-                    <h3 class="<?= $balance>=0?'text-success':'text-danger' ?>">
-                        $<?= number_format($balance,2) ?>
-                    </h3>
-                </div>
-            </div>
-        </div>
-
-        <!-- ================= GRAFICAS ================= -->
-        <div class="row g-3 mb-4">
-            <div class="col-md-6">
-                <div class="glass p-3"><canvas id="chartBar"></canvas></div>
-            </div>
-            <div class="col-md-6">
-                <div class="glass p-3"><canvas id="chartLine"></canvas></div>
-            </div>
-        </div>
-
-        <!-- ================= TABLA ================= -->
-        <div class="glass p-4">
-            <h5 class="mb-3">🧾 Movimientos</h5>
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Fecha</th>
-                            <th>Tipo</th>
-                            <th>Descripción</th>
-                            <th>Método</th>
-                            <th class="text-end">Monto</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php while($m=$movimientos->fetch_assoc()): ?>
-                        <tr>
-                            <td><?= date('d/m/Y H:i',strtotime($m['fecha'])) ?></td>
-                            <td><?= $m['tipo'] ?></td>
-                            <td><?= htmlspecialchars($m['descripcion']) ?></td>
-                            <td><?= $m['metodo'] ?></td>
-                            <td class="text-end <?= $m['monto']<0?'text-danger':'text-success' ?>">
-                                $<?= number_format($m['monto'],2) ?>
-                            </td>
-                        </tr>
-                        <?php endwhile; ?>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
+<form class="glass p-4 mb-4" method="GET">
+<div class="row g-3 align-items-end">
+    <div class="col-md-3">
+        <label class="form-label">Rango</label>
+        <select name="rango" class="form-select borde">
+            <?php foreach(['HOY','AYER','SEMANA','MES','PERSONALIZADO'] as $op): ?>
+                <option value="<?= $op ?>" <?= $rango==$op?'selected':'' ?>><?= $op ?></option>
+            <?php endforeach; ?>
+        </select>
     </div>
+    <div class="col-md-3">
+        <label class="form-label">Desde</label>
+        <input type="date" name="desde" class="form-control borde"
+               value="<?= $desde ?>" <?= $rango!='PERSONALIZADO'?'disabled':'' ?>>
+    </div>
+    <div class="col-md-3">
+        <label class="form-label">Hasta</label>
+        <input type="date" name="hasta" class="form-control borde"
+               value="<?= $hasta ?>" <?= $rango!='PERSONALIZADO'?'disabled':'' ?>>
+    </div>
+    <div class="col-md-3">
+        <button class="btn btn-primary w-100">🔍 Aplicar</button>
+    </div>
+</div>
+</form>
 
-    <script>
-    new Chart(chartBar, {
-        type: 'bar',
-        data: {
-            labels: ['Ventas', 'Gastos', 'Adeudos', 'Balance'],
-            datasets: [{
-                data: [
-                    <?= $totalVentas ?>,
-                    <?= $totalGastos ?>,
-                    <?= $totalAdeudos ?>,
-                    <?= $balance ?>
-                ],
-                backgroundColor: ['#198754', '#dc3545', '#ffc107', '#0d6efd']
-            }]
-        }
-    });
+<div class="row g-3 mb-4">
+<div class="col-md-3"><div class="glass p-3 text-center">
+<h6>💰 Ventas</h6><h3 class="text-success">$<?= number_format($totalVentas,2) ?></h3>
+</div></div>
 
-    new Chart(chartLine, {
-        type: 'line',
-        data: {
-            labels: <?= json_encode($labels) ?>,
-            datasets: [{
-                    label: 'Ventas',
-                    data: <?= json_encode($ventasDia) ?>,
-                    borderColor: '#198754'
-                },
-                {
-                    label: 'Gastos',
-                    data: <?= json_encode($gastosDia) ?>,
-                    borderColor: '#dc3545'
-                },
-                {
-                    label: 'Adeudos',
-                    data: <?= json_encode($adeudosDia) ?>,
-                    borderColor: '#ffc107'
-                }
-            ]
-        }
-    });
-    </script>
+<div class="col-md-3"><div class="glass p-3 text-center">
+<h6>💸 Gastos</h6><h3 class="text-danger">$<?= number_format($totalGastos,2) ?></h3>
+</div></div>
+
+<div class="col-md-3"><div class="glass p-3 text-center">
+<h6>📉 Adeudos</h6><h3 class="text-warning">$<?= number_format($totalAdeudos,2) ?></h3>
+</div></div>
+
+<div class="col-md-3"><div class="glass p-3 text-center">
+<h6>📊 Balance</h6>
+<h3 class="<?= $balance>=0?'text-success':'text-danger' ?>">
+$<?= number_format($balance,2) ?>
+</h3>
+</div></div>
+</div>
+
+<div class="row g-3 mb-4">
+<div class="col-md-6"><div class="glass p-3"><canvas id="chartBar"></canvas></div></div>
+<div class="col-md-6"><div class="glass p-3"><canvas id="chartLine"></canvas></div></div>
+</div>
+
+<div class="glass p-4">
+<h5 class="mb-3">🧾 Movimientos</h5>
+<table class="table table-hover">
+<thead><tr>
+<th>Fecha</th><th>Tipo</th><th>Descripción</th><th>Método</th><th class="text-end">Monto</th>
+</tr></thead>
+<tbody>
+<?php while($m=$movimientos->fetch_assoc()): ?>
+<tr>
+<td><?= date('d/m/Y H:i',strtotime($m['fecha'])) ?></td>
+<td><?= $m['tipo'] ?></td>
+<td><?= htmlspecialchars($m['descripcion']) ?></td>
+<td><?= $m['metodo'] ?></td>
+<td class="text-end <?= $m['monto']<0?'text-danger':'text-success' ?>">
+$<?= number_format($m['monto'],2) ?>
+</td>
+</tr>
+<?php endwhile; ?>
+</tbody>
+</table>
+</div>
+
+</div>
+
+<script>
+new Chart(chartBar,{
+type:'bar',
+data:{labels:['Ventas','Gastos','Adeudos','Balance'],
+datasets:[{data:[
+<?= $totalVentas ?>,
+<?= $totalGastos ?>,
+<?= $totalAdeudos ?>,
+<?= $balance ?>
+]}]}
+});
+
+new Chart(chartLine,{
+type:'line',
+data:{
+labels:<?= json_encode($labels) ?>,
+datasets:[
+{label:'Ventas',data:<?= json_encode($ventasDia) ?>},
+{label:'Gastos',data:<?= json_encode($gastosDia) ?>},
+{label:'Adeudos',data:<?= json_encode($adeudosDia) ?>}
+]}
+});
+</script>
 
 </body>
-
 </html>

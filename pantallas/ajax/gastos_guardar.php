@@ -1,10 +1,12 @@
 <?php
 require_once __DIR__ . '/../../conexion.php';
-require_once __DIR__ . '/../../includes/auth.php';
+
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 header('Content-Type: application/json');
 
-// ✅ VARIABLE CORRECTA
 if (!isset($_SESSION['user_id'])) {
     echo json_encode([
         'ok' => false,
@@ -15,16 +17,17 @@ if (!isset($_SESSION['user_id'])) {
 
 $usuario_id = (int) $_SESSION['user_id'];
 
-// 📥 DATOS
-$proveedor_id = !empty($_POST['proveedor_id']) ? (int)$_POST['proveedor_id'] : null;
+$proveedor_id = !empty($_POST['proveedor_id'])
+    ? (int)$_POST['proveedor_id']
+    : null;
+
 $concepto     = trim($_POST['concepto'] ?? '');
 $descripcion  = trim($_POST['descripcion'] ?? '');
-$monto        = (float) $_POST['monto'];
-$metodo_pago  = $_POST['metodo_pago'];
+$monto        = (float) ($_POST['monto'] ?? 0);
+$metodo_pago  = $_POST['metodo_pago'] ?? '';
 $fecha        = date('Y-m-d');
 
-// 🔒 VALIDACIONES
-if ($concepto === '' || $monto <= 0) {
+if ($concepto === '' || $monto <= 0 || $metodo_pago === '') {
     echo json_encode([
         'ok' => false,
         'msg' => 'Datos incompletos'
@@ -32,7 +35,6 @@ if ($concepto === '' || $monto <= 0) {
     exit;
 }
 
-// 🧾 INSERT REAL (SEGÚN TU TABLA)
 $stmt = $conexion->prepare("
     INSERT INTO gastos (
         proveedor_id,
@@ -57,10 +59,7 @@ $stmt->bind_param(
 );
 
 if ($stmt->execute()) {
-    echo json_encode([
-        'ok' => true,
-        'msg' => 'Gasto registrado correctamente'
-    ]);
+    echo json_encode(['ok' => true]);
 } else {
     echo json_encode([
         'ok' => false,

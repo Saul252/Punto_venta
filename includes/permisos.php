@@ -18,6 +18,7 @@ function puedeVerModulo(string $modulo): bool
             'clientes',
             'finanzas',
             'facturacion',
+            
         ],
         2 => [ // CAJERO
             'inicio',
