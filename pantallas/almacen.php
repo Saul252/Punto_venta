@@ -200,13 +200,14 @@ $categorias = $conexion->query("SELECT id, nombre FROM categorias ORDER BY nombr
                             <!-- DATOS FISCALES -->
                             <div class="col-md-6">
                                 <label>Clave producto/servicio SAT *</label>
-                                <input type="text" name="clave_prod_serv" class="form-control"
-                                    placeholder="Ej. 50202306" required>
+                               <input type="text" name="clave_prod_serv" id="clave_prod_serv" class="form-control" required>
+
                             </div>
 
                             <div class="col-md-6">
                                 <label>IVA *</label>
-                                <select name="tasa_iva" class="form-select">
+                               <select name="tasa_iva" id="tasa_iva" class="form-select">
+
                                     <option value="0.1600">16%</option>
                                     <option value="0.0000">0%</option>
                                 </select>
@@ -250,19 +251,26 @@ $categorias = $conexion->query("SELECT id, nombre FROM categorias ORDER BY nombr
     }
 
     /* ✏️ EDITAR */
-    function editarProducto(p) {
-        document.getElementById('tituloModal').innerText = '✏️ Editar producto';
-        producto_id.value = p.id;
-        codigo.value = p.codigo;
-        nombre.value = p.nombre;
-        precio_compra.value = p.precio_compra;
-        precio_venta.value = p.precio_venta;
-        stock.value = p.stock;
-        unidad_medida.value = p.unidad_medida;
-        categoria_id.value = p.categoria_id;
+  function editarProducto(p) {
+    document.getElementById('tituloModal').innerText = '✏️ Editar producto';
 
-        new bootstrap.Modal(document.getElementById('modalProducto')).show();
-    }
+    producto_id.value   = p.id;
+    codigo.value        = p.codigo;
+    nombre.value        = p.nombre;
+    descripcion.value   = p.descripcion ?? '';
+    precio_compra.value= p.precio_compra;
+    precio_venta.value = p.precio_venta;
+    stock.value         = p.stock;
+    unidad_medida.value= p.unidad_medida;
+    categoria_id.value = p.categoria_id;
+
+    // ✅ CAMPOS SAT
+    document.getElementById('clave_prod_serv').value = p.clave_prod_serv;
+    document.getElementById('clave_unidad').value    = p.clave_unidad;
+    document.getElementById('tasa_iva').value        = p.tasa_iva;
+
+    new bootstrap.Modal(document.getElementById('modalProducto')).show();
+}
 
     /* 💾 GUARDAR */
     function guardarProducto() {

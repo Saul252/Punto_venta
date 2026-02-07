@@ -615,23 +615,63 @@ while ($row = $resDetalle->fetch_assoc()) {
 
 
     <script>
-    btnCajaExcel.onclick = () => {
-        const filas = cards.filter(c => c.style.display !== 'none').map(c => {
-            const t = c.querySelector('.totales').innerText.split('\n')
-            return [
-                c.dataset.venta,
-                c.dataset.caja,
-                c.querySelector('.cliente').innerText.replace('🧾', '').trim(),
-                c.dataset.estado,
-                t[0].replace('Total:', '').trim(),
-                t[1].replace('Saldo:', '').trim()
-            ]
+       btnCajaExcel.onclick = () => {
+
+    const filas = []
+
+    // ENCABEZADOS
+    filas.push([
+        'Venta',
+        'Caja',
+        'Cliente',
+        'Producto',
+        'Cantidad',
+        'Precio',
+        'Subtotal',
+        'Total venta'
+    ])
+
+    cards
+        .filter(c => c.style.display !== 'none')
+        .forEach(c => {
+
+            const venta   = c.dataset.venta
+            const caja    = c.dataset.caja
+            const cliente = c.querySelector('.cliente')
+                .innerText.replace('🧾', '').trim()
+            const totalVenta = c.dataset.total
+
+            const tbody = c.querySelector('.detalle-venta table tbody')
+
+            if (!tbody) return
+
+            let primeraFila = true
+
+            tbody.querySelectorAll('tr').forEach(tr => {
+                const tds = tr.querySelectorAll('td')
+
+                filas.push([
+                    primeraFila ? venta : '',
+                    primeraFila ? caja : '',
+                    primeraFila ? cliente : '',
+                    tds[0].innerText, // Producto
+                    tds[1].innerText, // Cantidad
+                    tds[2].innerText, // Precio
+                    tds[3].innerText, // Subtotal
+                    primeraFila ? totalVenta : ''
+                ])
+
+                primeraFila = false
+            })
         })
-        filas.unshift(['Venta', 'Caja', 'Cliente', 'Estado', 'Total', 'Saldo'])
-        const wb = XLSX.utils.book_new()
-        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(filas), 'Caja')
-        XLSX.writeFile(wb, 'caja_ventas.xlsx')
-    }
+
+    const wb = XLSX.utils.book_new()
+    const ws = XLSX.utils.aoa_to_sheet(filas)
+
+    XLSX.utils.book_append_sheet(wb, ws, 'Ventas detalladas')
+    XLSX.writeFile(wb, 'caja_ventas_detallado.xlsx')
+}
+ 
     </script>
 
     <script>

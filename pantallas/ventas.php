@@ -273,18 +273,34 @@ while($c=$clientes->fetch_assoc()):
                             </div>
 
                             <!-- RÉGIMEN -->
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Régimen fiscal</label>
-                                <input type="text" name="regimen_fiscal" class="form-control">
+
+                            <div class="col-md-6">
+                                <label class="form-label">Régimen fiscal *</label>
+                                <select name="regimen_fiscal" id="regimen_fiscal" class="form-select" required>
+                                    <option value="">Selecciona régimen</option>
+                                    <option value="601">601 – General de Ley Personas Morales</option>
+                                    <option value="603">603 – Personas Morales sin Fines Lucrativos</option>
+                                    <option value="605">605 – Sueldos y Salarios</option>
+                                    <option value="606">606 – Arrendamiento</option>
+                                    <option value="612">612 – Actividades Empresariales</option>
+                                    <option value="626">626 – RESICO</option>
+                                </select>
                             </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">Uso CFDI *</label>
+                                <select name="uso_cfdi" id="uso_cfdi" class="form-select" required>
+                                    <option value="">Selecciona uso</option>
+                                    <option value="G01">G01 – Adquisición de mercancías</option>
+                                    <option value="G03">G03 – Gastos en general</option>
+                                    <option value="P01">P01 – Por definir</option>
+                                </select>
+                            </div>
+                            
                         </div>
 
                         <!-- USO CFDI -->
-                        <div class="mb-3">
-                            <label class="form-label">Uso CFDI</label>
-                            <input type="text" name="uso_cfdi" class="form-control" placeholder="G01, G03, P01...">
-                        </div>
-
+                        
                     </div>
 
                     <div class="modal-footer">

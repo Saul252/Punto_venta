@@ -3,13 +3,22 @@ require_once __DIR__ . '/../includes/auth.php';
 protegerPagina();
 
 require "../conexion.php";
-
 header('Content-Type: application/json');
 
-/* ================= VALIDAR ================= */
-$nombre = trim($_POST['nombre'] ?? '');
-$id     = $_POST['id'] ?? '';
+/* ================= CAMPOS ================= */
+$id               = $_POST['id'] ?? '';
+$nombre           = trim($_POST['nombre'] ?? '');
+$rfc              = $_POST['rfc'] ?? '';
+$razon_social     = $_POST['razon_social'] ?? '';
+$documento        = $_POST['documento'] ?? '';
+$telefono         = $_POST['telefono'] ?? '';
+$email            = $_POST['email'] ?? '';
+$direccion_fiscal = $_POST['direccion_fiscal'] ?? '';
+$codigo_postal    = $_POST['codigo_postal'] ?? '';
+$regimen_fiscal   = $_POST['regimen_fiscal'] ?? '';
+$uso_cfdi         = $_POST['uso_cfdi'] ?? '';
 
+/* ================= VALIDAR ================= */
 if ($nombre === '') {
     echo json_encode([
         'ok' => false,
@@ -18,19 +27,26 @@ if ($nombre === '') {
     exit;
 }
 
-/* ================= CAMPOS ================= */
-$rfc               = $_POST['rfc'] ?? null;
-$razon_social      = $_POST['razon_social'] ?? null;
-$documento         = $_POST['documento'] ?? null;
-$telefono          = $_POST['telefono'] ?? null;
-$email             = $_POST['email'] ?? null;
-$direccion_fiscal  = $_POST['direccion_fiscal'] ?? null;
-$codigo_postal     = $_POST['codigo_postal'] ?? null;
-$regimen_fiscal    = $_POST['regimen_fiscal'] ?? null;
-$uso_cfdi          = $_POST['uso_cfdi'] ?? null;
+if (!$codigo_postal || !$regimen_fiscal || !$uso_cfdi) {
+    echo json_encode([
+        'ok' => false,
+        'msg' => 'Faltan datos fiscales obligatorios'
+    ]);
+    exit;
+}
 
-/* ================= EDITAR ================= */
-if (!empty($id)) {
+/* ===================================================
+   ===================== EDITAR ======================
+   =================================================== */
+if ($id !== '') {
+
+    if (!is_numeric($id)) {
+        echo json_encode([
+            'ok' => false,
+            'msg' => 'ID inválido'
+        ]);
+        exit;
+    }
 
     $stmt = $conexion->prepare("
         UPDATE clientes SET
@@ -45,6 +61,7 @@ if (!empty($id)) {
             regimen_fiscal = ?,
             uso_cfdi = ?
         WHERE id = ?
+        LIMIT 1
     ");
 
     $stmt->bind_param(
@@ -65,7 +82,9 @@ if (!empty($id)) {
     if ($stmt->execute()) {
         echo json_encode([
             'ok' => true,
-            'msg' => 'Cliente actualizado correctamente'
+            'msg' => 'Cliente actualizado correctamente',
+            'id' => $id,
+            'nombre' => $razon_social ?: $nombre
         ]);
     } else {
         echo json_encode([
@@ -78,7 +97,9 @@ if (!empty($id)) {
     exit;
 }
 
-/* ================= NUEVO ================= */
+/* ===================================================
+   ===================== NUEVO =======================
+   =================================================== */
 $stmt = $conexion->prepare("
     INSERT INTO clientes
     (nombre, rfc, razon_social, documento, telefono, email,
@@ -103,7 +124,9 @@ $stmt->bind_param(
 if ($stmt->execute()) {
     echo json_encode([
         'ok' => true,
-        'msg' => 'Cliente registrado correctamente'
+        'msg' => 'Cliente registrado correctamente',
+        'id' => $stmt->insert_id,
+        'nombre' => $razon_social ?: $nombre
     ]);
 } else {
     echo json_encode([
